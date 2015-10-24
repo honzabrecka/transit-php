@@ -1,0 +1,20 @@
+{
+  "name": "honzabrecka/transit",
+  "authors": [
+    {
+      "name": "Jan Břečka",
+      "email": "jan.brecka@gmail.com",
+      "homepage": "http://honzabrecka.com"
+    }
+  ],
+  "license": "MIT",
+  "autoload": {
+    "psr-0": {
+      "transit\\": "src/"
+    }
+  },
+  "require": {
+    "nette/tester": "1.6.*",
+    "nette/utils": "2.3.*"
+  }
+}
