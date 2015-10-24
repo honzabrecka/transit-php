@@ -1,4 +1,4 @@
-# transit-php
+# transit-php [![Build Status](https://travis-ci.org/honzabrecka/transit-php.svg?branch=master)](https://travis-ci.org/honzabrecka/transit-php)
 
 ```php
 use transit\JSONReader;
