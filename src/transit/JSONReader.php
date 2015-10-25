@@ -2,44 +2,53 @@
 
 namespace transit;
 
-use transit\handlers\NullHandler;
-use transit\handlers\BoolHandler;
-use transit\handlers\IntHandler;
-use transit\handlers\FloatHandler;
-use transit\handlers\StringHandler;
-use transit\handlers\QuoteHandler;
-use transit\handlers\SpecialNumberHandler;
+use transit\Map;
+use transit\Bytes;
 use Nette\Utils\Json;
 use Nette\Utils\JsonException;
 
 class JSONReader implements Reader {
 
-    private $verbose;
-
     private $cache;
 
     private $handlers;
 
-    public function __construct($verbose = false) {
-        $this->verbose = $verbose;
+    private $groundHandlers;
+
+    public function __construct() {
+        $this->groundHandlers = [
+            '_' => function($_) {
+                return null;
+            },
+            '?' => function($obj) {
+                $table = ['t' => true, 'f' => false];
+                return $table[$obj];
+            },
+            'i' => function($obj) {
+                return (int)$obj;
+            },
+            'd' => function($obj) {
+                return (float)$obj;
+            },
+            'b' => function($obj) {
+                return new Bytes(base64_decode($obj));
+            },
+            's' => function($obj) {
+                return (string)$obj;
+            },
+            '~' => function($obj) {
+                return '~' . $obj;
+            },
+            '^' => function($obj) {
+                return '^' . $obj;
+            }
+        ];
     }
 
     public function read(Cache $cache, $handlers, $input) {
         $this->cache = $cache;
-        $this->handlers = array_merge($handlers, $this->groundHandlers());
+        $this->handlers = $handlers;
         return $this->handle($this->parse($input));
-    }
-
-    private function groundHandlers() {
-        return [
-            '_' => new NullHandler(),
-            '?' => new BoolHandler(),
-            'i' => new IntHandler(),
-            'd' => new FloatHandler(),
-            's' => new StringHandler(),
-            'z' => new SpecialNumberHandler(),
-            '\'' => new QuoteHandler()
-        ];
     }
 
     private function parse($input) {
@@ -51,41 +60,20 @@ class JSONReader implements Reader {
     }
 
     private function handle($input, $asKey = false) {
-        if (!$this->verbose && gettype($input) == gettype(new \stdClass())) {
+        if (gettype($input) == gettype(new \stdClass())) {
             throw new TransitException('Input is not valid transit.');
         }
 
-        $compositeTypes = [
-            gettype([]) => [$this, 'emitComposite'],
-            gettype(new \stdClass()) => [$this, 'emitVerboseComposite']
-        ];
-        $type = gettype($input);
-
-        return isset($compositeTypes[$type])
-            ? $compositeTypes[$type]($input)
+        return is_array($input)
+            ? $this->emitComposite($input)
             : $this->emitScalar($input, $asKey);
     }
 
     private function emitComposite(array $input) {
         if (count($input) == 0) return $input;
-        if (!$this->verbose && $this->isMap($input)) return $this->emitMap($input);
-        if (!$this->verbose && $this->isCompositeExtension($input)) return $this->emitCompositeExtension($input);
+        if ($this->isMap($input)) return $this->emitMap($this->rest($input));
+        if ($this->isCompositeExtension($input)) return $this->emitCompositeExtension($input);
         return $this->emitArray($input);
-    }
-
-    private function emitVerboseComposite($input) {
-        $extension = $this->checkVerboseComposite($input);
-        $result = [];
-
-        foreach ($input as $key => $value) {
-            if (!$extension) {
-                $result[$this->handle($key, true)] = $this->handle($value);
-            }
-        }
-
-        return $extension
-            ? $this->emitCompositeExtension([$key, $value])
-            : (object)$result;
     }
 
     private function isMap(array $input) {
@@ -132,31 +120,27 @@ class JSONReader implements Reader {
     }
 
     private function emitMap(array $input) {
-        if (count($input) % 2 == 0) {
+        if (count($input) % 2 == 1) {
             throw new TransitException('Input is not valid transit.');
         }
 
-        array_shift($input);
-
         $result = [];
         $i = 0;
-        $key = null;
 
         foreach ($input as $value) {
             $i++ % 2 == 0
-                ? $key = $this->handle($value, true)
-                : $result[$key] = $this->handle($value);
+                ? $result[] = $this->handle($value, true)
+                : $result[] = $this->handle($value);
         }
 
-        return (object)$result;
+        return new Map($result);
     }
 
     private function emitScalarExtension($input) {
         $tag = substr($input, 0, 1);
         $value = substr($input, 1);
-        $quotes = ['~' => true, '^' => true];
-        return isset($quotes[$tag])
-            ? $input
+        return isset($this->groundHandlers[$tag])
+            ? $this->groundHandlers[$tag]($value)
             : $this->extensionHandler($tag)->resolve($value);
     }
 
@@ -165,7 +149,11 @@ class JSONReader implements Reader {
             throw new TransitException('Input is not valid transit.');
         }
 
-        return $this->extensionHandler(substr($input[0], 2))->resolve($this->handle($input[1]));
+        $tag = substr($input[0], 2);
+
+        return $tag == 'cmap'
+            ? $this->emitMap($input[1])
+            : $this->extensionHandler($tag)->resolve($this->handle($input[1]));
     }
 
     private function extensionHandler($tag) {
@@ -182,6 +170,11 @@ class JSONReader implements Reader {
         return $asKey
             ? $this->cache->save($value, $type, Cache::READ)
             : $value;
+    }
+
+    private function rest(array $input) {
+        array_shift($input);
+        return $input;
     }
 
 }

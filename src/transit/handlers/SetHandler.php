@@ -2,24 +2,24 @@
 
 namespace transit\handlers;
 
-use transit\Symbol;
+use transit\Set;
 
-class SymbolHandler implements Handler {
+class SetHandler implements Handler {
 
     public function tag() {
-        return '$';
+        return 'set';
     }
 
     public function type() {
-        return Symbol::class;
+        return Set::class;
     }
 
     public function representation($obj) {
-        return (string)$obj;
+        return $obj->toArray();
     }
 
     public function resolve($obj) {
-        return new Symbol($obj);
+        return new Set($obj);
     }
 
 }

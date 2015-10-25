@@ -2,16 +2,16 @@
 
 namespace transit\handlers;
 
-use transit\Symbol;
+use transit\UUID;
 
-class SymbolHandler implements Handler {
+class UUIDHandler implements Handler {
 
     public function tag() {
-        return '$';
+        return 'u';
     }
 
     public function type() {
-        return Symbol::class;
+        return UUID::class;
     }
 
     public function representation($obj) {
@@ -19,7 +19,7 @@ class SymbolHandler implements Handler {
     }
 
     public function resolve($obj) {
-        return new Symbol($obj);
+        return new UUID($obj);
     }
 
 }

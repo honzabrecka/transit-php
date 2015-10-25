@@ -2,8 +2,8 @@
 
 namespace transit;
 
-use transit\types\Keyword;
-use transit\types\Symbol;
+use transit\Keyword;
+use transit\Symbol;
 
 class Cache {
 

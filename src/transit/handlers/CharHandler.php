@@ -2,16 +2,16 @@
 
 namespace transit\handlers;
 
-use transit\Symbol;
+use transit\Char;
 
-class SymbolHandler implements Handler {
+class CharHandler implements Handler {
 
     public function tag() {
-        return '$';
+        return 'c';
     }
 
     public function type() {
-        return Symbol::class;
+        return Char::class;
     }
 
     public function representation($obj) {
@@ -19,7 +19,7 @@ class SymbolHandler implements Handler {
     }
 
     public function resolve($obj) {
-        return new Symbol($obj);
+        return new Char($obj);
     }
 
 }

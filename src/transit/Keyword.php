@@ -1,8 +1,6 @@
 <?php
 
-namespace transit\types;
-
-use transit\TransitException;
+namespace transit;
 
 class Keyword {
 

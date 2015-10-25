@@ -2,24 +2,22 @@
 
 namespace transit\handlers;
 
-use transit\Symbol;
-
-class SymbolHandler implements Handler {
+class DateTimeHandler implements Handler {
 
     public function tag() {
-        return '$';
+        return 'm';
     }
 
     public function type() {
-        return Symbol::class;
+        return \DateTime::class;
     }
 
     public function representation($obj) {
-        return (string)$obj;
+        return $obj->getTimestamp();
     }
 
     public function resolve($obj) {
-        return new Symbol($obj);
+        return new \DateTime('@' . $obj);
     }
 
 }

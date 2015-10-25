@@ -2,9 +2,9 @@
 
 namespace transit\handlers;
 
-use transit\types\Keyword;
+use transit\Keyword;
 
-class KeywordHandler implements ExtensionHandler {
+class KeywordHandler implements Handler {
 
     public function tag() {
         return ':';

@@ -2,16 +2,16 @@
 
 namespace transit\handlers;
 
-use transit\Symbol;
+use transit\URI;
 
-class SymbolHandler implements Handler {
+class URIHandler implements Handler {
 
     public function tag() {
-        return '$';
+        return 'r';
     }
 
     public function type() {
-        return Symbol::class;
+        return URI::class;
     }
 
     public function representation($obj) {
@@ -19,7 +19,7 @@ class SymbolHandler implements Handler {
     }
 
     public function resolve($obj) {
-        return new Symbol($obj);
+        return new URI($obj);
     }
 
 }

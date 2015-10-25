@@ -2,15 +2,15 @@
 
 namespace transit\handlers;
 
-class QuoteHandler implements GroundHandler {
+class QuoteHandler implements Handler {
 
-    public function representation($handler, $obj, $asKey) {
-        return ['~#\'', $obj];
+    public function tag() {
+        return '\'';
     }
 
-    public function verboseRepresentation($handler, $obj, $asKey) {
-        return (object)['~#\'' => $obj];
-    }
+    public function type() {}
+
+    public function representation($obj) {}
 
     public function resolve($obj) {
         return $obj;

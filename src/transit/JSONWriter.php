@@ -2,26 +2,71 @@
 
 namespace transit;
 
-use transit\handlers\StringHandler;
-use transit\handlers\IntHandler;
-use transit\handlers\FloatHandler;
-use transit\handlers\BoolHandler;
-use transit\handlers\NullHandler;
-use transit\handlers\ArrayHandler;
-use transit\handlers\MapHandler;
-use transit\handlers\QuoteHandler;
 use Nette\Utils\Json;
 
 class JSONWriter implements Writer {
-
-    private $verbose;
 
     private $cache;
 
     private $handlers;
 
-    public function __construct($verbose = false) {
-        $this->verbose = $verbose;
+    private $groundHandlers;
+
+    public function __construct() {
+        $this->groundHandlers = [
+            gettype('') => function($obj, $asKey) {
+                $bad = ['~' => true, '^' => true];
+                return strlen($obj) > 0 && isset($bad[$obj[0]]) ? '~' . $obj : $obj;
+            },
+            gettype(1) => function($obj, $asKey) {
+                return $asKey ? '~i' . $obj : $obj;
+            },
+            gettype(1.1) => function($obj, $asKey) {
+                if (is_nan($obj)) return '~zNaN';
+                if ($obj == INF) return '~zINF';
+                if ($obj == -INF) return '~z-INF';
+                return $asKey ? '~d' . $obj : $obj;
+            },
+            gettype(true) => function($obj, $asKey) {
+                return $asKey ? '~?' . ($obj ? 't' : 'f') : $obj;
+            },
+            gettype(null) => function($obj, $asKey) {
+                return $asKey ? '~_' : $obj;
+            },
+            gettype([]) => function($obj, $_) {
+                $result = [];
+
+                foreach ($obj as $value) {
+                    $result[] = $this->handle($value);
+                }
+
+                return $result;
+            },
+            Bytes::class => function($obj, $_) {
+                return '~b' . base64_encode((string)$obj);
+            },
+            Map::class => function($obj, $_) {
+                $result = [];
+                $handledValue = null;
+                $compositeKey = false;
+                $i = 0;
+                $asKey = false;
+
+                foreach ($obj->toArray() as $value) {
+                    $asKey = $i++ % 2 == 0;
+                    $handledValue = $this->handle($value, $asKey);
+                    if ($asKey && !$compositeKey && is_array($handledValue)) $compositeKey = true;
+                    $result[] = $handledValue;
+                }
+
+                if ($compositeKey) {
+                    return ['~#cmap', $result];
+                }
+
+                array_unshift($result, '^ ');
+                return $result;
+            },
+        ];
     }
 
     public function write(Cache $cache, $handlers, $input) {
@@ -30,42 +75,18 @@ class JSONWriter implements Writer {
         return Json::encode($this->handleTop($input));
     }
 
-    private function groundHandlers() {
-        return [
-            gettype('') => new StringHandler(),
-            gettype(1) => new IntHandler(),
-            gettype(1.1) => new FloatHandler(),
-            gettype(true) => new BoolHandler(),
-            gettype(null) => new NullHandler(),
-            gettype([]) => new ArrayHandler(),
-            \stdClass::class => new MapHandler(),
-            '\'' => new QuoteHandler()
-        ];
-    }
-
     private function handleTop($input) {
         $result = $this->handle($input);
-        $compositeTypes = [gettype([]) => true, gettype(new \stdClass()) => true];
-        return isset($compositeTypes[gettype($result)])
+        return is_array($result)
             ? $result
-            : $this->handleGround('\'', $result);
+            : ['~#\'', $result];
     }
 
     private function handle($input, $asKey = false) {
         $type = $this->type($input);
-        return isset($this->groundHandlers()[$type])
-            ? $this->cached($this->handleGround($type, $input, $asKey), $type, $asKey)
+        return isset($this->groundHandlers[$type])
+            ? $this->cached($this->groundHandlers[$type]($input, $asKey), $type, $asKey)
             : $this->handleExtension($type, $input, $asKey);
-    }
-
-    private function handleGround($type, $input, $asKey = false) {
-        $handler = function($value, $asKey = false) {
-            return $this->handle($value, $asKey);
-        };
-
-        return $this->verbose
-            ? $this->groundHandlers()[$type]->verboseRepresentation($handler, $input, $asKey)
-            : $this->groundHandlers()[$type]->representation($handler, $input, $asKey);
     }
 
     private function handleExtension($type, $input, $asKey = false) {
@@ -74,7 +95,7 @@ class JSONWriter implements Writer {
         $result = $this->handle($handler->representation($input));
         return $this->isScalarExtension($tag)
             ? $this->cached('~' . $tag . $result, $type, $asKey)
-            : ($this->verbose ? (object)['~#' . $tag => $result] : ['~#' . $tag, $result]);
+            : ['~#' . $tag, $result];
     }
 
     private function type($input) {

@@ -1,19 +1,85 @@
 <?php
 
-// TODO set
-// TODO list
-// TODO cmap
-// TODO uri, uuid, ...
-
 require __DIR__ . '/../vendor/autoload.php';
 
 use Tester\Assert;
 use transit\JSONReader;
 use transit\JSONWriter;
 use transit\Transit;
-use transit\handlers\ExtensionHandler;
-use transit\types\Keyword;
-use transit\types\Symbol;
+use transit\handlers\Handler;
+use transit\Keyword;
+use transit\Symbol;
+use transit\Map;
+use transit\Set;
+use transit\Bytes;
+use transit\URI;
+use transit\UUID;
+use transit\Char;
+
+//-------------------------
+// structs
+
+// map
+Assert::exception(function() {
+  new Map(['keyOnly']);
+}, 'transit\TransitException');
+
+$m = new Map([true, 'a']);
+Assert::equal('a', $m[true]);
+Assert::true(isset($m[true]));
+Assert::equal([true, 'a'], $m->toArray());
+
+$m[true] = 'b';
+Assert::equal('b', $m[true]);
+Assert::equal([true, 'b'], $m->toArray());
+
+unset($m[true]);
+Assert::false(isset($m[true]));
+Assert::equal([], $m->toArray());
+
+Assert::false(isset($m['whatever']));
+
+$m[1] = 'x';
+$m[1.0] = 'y';
+$m[new Keyword('abc')] = 'z';
+Assert::equal([1, 'x', 1.0, 'y', new Keyword('abc'), 'z'], $m->toArray());
+Assert::equal('x', $m[1]);
+Assert::equal('y', $m[1.0]);
+Assert::equal('z', $m[new Keyword('abc')]);
+Assert::true(isset($m[1]));
+Assert::true(isset($m[1.0]));
+Assert::true(isset($m[new Keyword('abc')]));
+Assert::false(isset($m['whatever']));
+
+unset($m[1.000]);
+Assert::equal([1, 'x', new Keyword('abc'), 'z'], $m->toArray());
+Assert::equal('x', $m[1]);
+Assert::equal('z', $m[new Keyword('abc')]);
+Assert::true(isset($m[1]));
+Assert::true(isset($m[new Keyword('abc')]));
+
+// set
+$s = new Set(['a']);
+
+Assert::exception(function() use ($s) {
+  $s->add('a');
+}, 'transit\TransitException');
+
+Assert::true($s->contains('a'));
+
+$s->add(new Keyword('abc'));
+$s->add('b');
+$s->add(true);
+Assert::equal(['a', new Keyword('abc'), 'b', true], $s->toArray());
+
+$s->remove(new Keyword('abc'));
+Assert::equal(['a', 'b', true], $s->toArray());
+Assert::false($s->contains(new Keyword('abc')));
+Assert::true($s->contains('a'));
+Assert::true($s->contains('b'));
+Assert::true($s->contains(true));
+
+//-------------------------
 
 class Point {
 
@@ -41,7 +107,7 @@ class Circle {
 
 }
 
-class PointHandler implements ExtensionHandler {
+class PointHandler implements Handler {
 
     public function tag() {
         return 'point';
@@ -61,7 +127,7 @@ class PointHandler implements ExtensionHandler {
 
 }
 
-class CircleHandler implements ExtensionHandler {
+class CircleHandler implements Handler {
 
     public function tag() {
         return 'circle';
@@ -83,33 +149,24 @@ class CircleHandler implements ExtensionHandler {
 
 class UnregisteredExtension {}
 
-function t($verbose) {
-  $t = new Transit(new JSONReader($verbose), new JSONWriter($verbose));
+function t() {
+  $t = new Transit(new JSONReader(), new JSONWriter());
   $t->registerHandler(new PointHandler());
   $t->registerHandler(new CircleHandler());
   return $t;
 }
 
 function w($input) {
-  return t(false)->write($input);
+  return t()->write($input);
 }
 
 function r($input) {
-  return t(false)->read($input);
-}
-
-function wv($input) {
-  return t(true)->write($input);
-}
-
-function rv($input) {
-  return t(true)->read($input);
+  return t()->read($input);
 }
 
 //-------------------------
 // write
 
-// simple write
 Assert::equal('["~#\'","foo"]', w('foo'));
 Assert::equal('["~#\'",0]', w(0));
 Assert::equal('["~#\'",1]', w(1));
@@ -121,8 +178,9 @@ Assert::equal('["~#\'",false]', w(false));
 Assert::equal('["~#\'","~zNaN"]', w(NAN));
 Assert::equal('["~#\'","~zINF"]', w(INF));
 Assert::equal('["~#\'","~z-INF"]', w(-INF));
+Assert::equal('["~#\'","~:a"]', w(new Keyword('a')));
+Assert::equal('["~#\'","~$a"]', w(new Symbol('a')));
 
-// vector simple write
 Assert::equal('[]', w([]));
 Assert::equal('["foo"]', w(['foo']));
 Assert::equal('[0]', w([0]));
@@ -137,35 +195,43 @@ Assert::equal('["","a","ab","abc"]', w(['', 'a', 'ab', 'abc']));
 Assert::equal('["~zNaN"]', w([NAN]));
 Assert::equal('["~zINF"]', w([INF]));
 Assert::equal('["~z-INF"]', w([-INF]));
+Assert::equal('["~:a"]', w([new Keyword('a')]));
+Assert::equal('["~$a"]', w([new Symbol('a')]));
 
 Assert::equal('["~~foo"]', w(['~foo']));
 Assert::equal('["~^foo"]', w(['^foo']));
 
-// map simple write
-Assert::equal('["^ "]', w((object)[]));
-Assert::equal('["^ ","foo","bar"]', w((object)['foo' => 'bar']));
-Assert::equal('["^ ","~i6","six"]', w((object)[6 => 'six']));
-//Assert::equal('["^ ","~d1.25","x"]', w((object)[1.25 => 'x']));// TODO currently unsupported
-//Assert::equal('["^ ","~?t","x"]', w((object)[true => 'x']));// TODO currently unsupported
-//Assert::equal('["^ ","~?f","x"]', w((object)[false => 'x']));// TODO currently unsupported
-//Assert::equal('["^ ","~_","x"]', w((object)[null => 'x']));// TODO currently unsupported
-//Assert::equal('["^ ","~zNaN","x"]', w((object)[NAN => 'x']));// TODO currently unsupported
-//Assert::equal('["^ ","~zINF","x"]', w((object)[INF => 'x']));// TODO currently unsupported
-//Assert::equal('["^ ","~z-INF","x"]', w((object)[-INF => 'x']));// TODO currently unsupported
-//Assert::equal('["^ ","~:a","b"]', w((object)[new Symbol('a') => 'b'])); // TODO symbol
-//Assert::equal('["^ ","~$a","b"]', w((object)[new Keyword('a') => 'b']));// TODO keyword
+Assert::equal('["^ "]', w(new Map([])));
+Assert::equal('["^ ","foo","bar"]', w(new Map(['foo', 'bar'])));
+Assert::equal('["^ ","~i6","six"]', w(new Map([6, 'six'])));
+Assert::equal('["^ ","~d1.25","x"]', w(new Map([1.25, 'x'])));
+Assert::equal('["^ ","~?t","x"]', w(new Map([true, 'x'])));
+Assert::equal('["^ ","~?f","x"]', w(new Map([false, 'x'])));
+Assert::equal('["^ ","~_","x"]', w(new Map([null, 'x'])));
+Assert::equal('["^ ","~zNaN","x"]', w(new Map([NAN, 'x'])));
+Assert::equal('["^ ","~zINF","x"]', w(new Map([INF, 'x'])));
+Assert::equal('["^ ","~z-INF","x"]', w(new Map([-INF, 'x'])));
+Assert::equal('["^ ","~$a","b"]', w(new Map([new Symbol('a'), 'b'])));
+Assert::equal('["^ ","~:a","b"]', w(new Map([new Keyword('a'), 'b'])));
+Assert::equal('["~#cmap",[["a"],"b"]]', w(new Map([['a'], 'b'])));
+Assert::equal('["~#cmap",[["~#set",["a"]],"b"]]', w(new Map([new Set(['a']), 'b'])));
+Assert::equal('["~#cmap",[["^ ","foo","bar"],"b"]]', w(new Map([new Map(['foo', 'bar']), 'b'])));
 
-// mixed/nested write
 Assert::equal('[[1,2,3],[[4]]]', w([[1, 2, 3], [[4]]]));
-Assert::equal('[["^ ","foo",["bar",true,1.25]]]', w([(object)['foo' => ['bar', true, 1.25]]]));
+Assert::equal('[["^ ","foo",["bar",true,1.25]]]', w([new Map(['foo', ['bar', true, 1.25]])]));
 
-// custom write
 Assert::equal('["~#point",[10,20]]', w(new Point(10, 20)));
 Assert::equal('["~#circle",[["~#point",[10,20]],5]]', w(new Circle(new Point(10, 20), 5)));
 
 Assert::exception(function() {
   w(new UnregisteredExtension());
 }, 'transit\TransitException');
+
+Assert::exception(function() {
+  w((object)['a' => 'b']);
+}, 'transit\TransitException');
+
+Assert::equal('["value"]', w(['key' => 'value']));
 
 //-------------------------
 // read
@@ -190,7 +256,6 @@ Assert::exception(function() {
   r('["~#\'",1,2]');
 }, 'transit\TransitException');
 
-// BC read
 Assert::equal('foo', r('"foo"'));
 Assert::equal(0, r('0'));
 Assert::equal(1, r('1'));
@@ -199,8 +264,12 @@ Assert::equal(2.5, r('2.5'));
 Assert::equal(null, r('null'));
 Assert::equal(true, r('true'));
 Assert::equal(false, r('false'));
+Assert::nan(r('"~zNaN"'));
+Assert::equal(INF, r('"~zINF"'));
+Assert::equal(-INF, r('"~z-INF"'));
+Assert::equal(new Keyword('a'), r('"~:a"'));
+Assert::equal(new Symbol('a'), r('"~$a"'));
 
-// simple read
 Assert::equal('foo', r('["~#\'","foo"]'));
 Assert::equal(0, r('["~#\'",0]'));
 Assert::equal(1, r('["~#\'",1]'));
@@ -213,7 +282,6 @@ Assert::equal(false, r('["~#\'",false]'));
 Assert::equal(['~foo'], r('["~~foo"]'));
 Assert::equal(['^foo'], r('["~^foo"]'));
 
-// vector simple read
 Assert::equal([], r('[]'));
 Assert::equal(['foo'], r('["foo"]'));
 Assert::equal([0], r('[0]'));
@@ -229,176 +297,53 @@ Assert::nan(r('["~zNaN"]')[0]);
 Assert::equal([INF], r('["~zINF"]'));
 Assert::equal([-INF],r('["~z-INF"]'));
 
-// map simple read
-Assert::equal((object)[], r('["^ "]'));
-Assert::equal((object)['foo' => 'bar'], r('["^ ","foo","bar"]'));
-Assert::equal((object)[6 => 'six'], r('["^ ","~i6","six"]'));
+Assert::equal(new Map([]), r('["^ "]'));
+Assert::equal(new Map(['foo', 'bar']), r('["^ ","foo","bar"]'));
+Assert::equal(new Map([6, 'six']), r('["^ ","~i6","six"]'));
+Assert::equal(new Map([1.25, 'x']), r('["^ ","~d1.25","x"]'));
+Assert::equal(new Map([true, 'x']), r('["^ ","~?t","x"]'));
+Assert::equal(new Map([false, 'x']), r('["^ ","~?f","x"]'));
+Assert::equal(new Map([null, 'x']), r('["^ ","~_","x"]'));
+//Assert::equal(new Map([NAN, 'x']), r('["^ ","~zNaN","x"]'));
+Assert::equal(new Map([INF, 'x']), r('["^ ","~zINF","x"]'));
+Assert::equal(new Map([-INF, 'x']), r('["^ ","~z-INF","x"]'));
+Assert::equal(new Map([new Symbol('a'), 'b']), r('["^ ","~$a","b"]'));
+Assert::equal(new Map([new Keyword('a'), 'b']), r('["^ ","~:a","b"]'));
+Assert::equal(new Map([['a'], 'b']), r('["~#cmap",[["a"],"b"]]'));
+Assert::equal(new Map([new Set(['a']), 'b']), r('["~#cmap",[["~#set",["a"]],"b"]]'));
+Assert::equal(new Map([new Map(['foo', 'bar']), 'b']), r('["~#cmap",[["^ ","foo","bar"],"b"]]'));
 
-// mixed/nested read
 Assert::equal([[1, 2, 3], [[4]]], r('[[1,2,3],[[4]]]'));
-Assert::equal([(object)['foo' => ['bar', true, 1.25]]], r('[["^ ","foo",["bar",true,1.25]]]'));
+Assert::equal([new Map(['foo', ['bar', true, 1.25]])], r('[["^ ","foo",["bar",true,1.25]]]'));
 
-// custom read
 Assert::equal(new Point(10, 20), r('["~#point",[10,20]]'));
 Assert::equal(new Circle(new Point(10, 20), 5), r('["~#circle",[["~#point",[10,20]],5]]'));
 
+//-------------------------
 // caching
-Assert::equal('[["^ ","aaaa","b"],["^ ","^0","b"],["^ ","^0","b"]]', w([(object)['aaaa' => 'b'], (object)['aaaa' => 'b'], (object)['aaaa' => 'b']]));
-Assert::equal('[[["^ ","aaaa","b"]],["^ ","^0","b"]]', w([[(object)['aaaa' => 'b']], (object)['aaaa' => 'b']]));
-Assert::equal('[["^ ","aaaa","b"],[["^ ","^0","b"]]]', w([(object)['aaaa' => 'b'], [(object)['aaaa' => 'b']]]));
 
-Assert::equal([(object)['aaaa' => 'b'], (object)['aaaa' => 'b'], (object)['aaaa' => 'b']], r('[["^ ","aaaa","b"],["^ ","^0","b"],["^ ","^0","b"]]'));
-Assert::equal([[(object)['aaaa' => 'b']], (object)['aaaa' => 'b']], r('[[["^ ","aaaa","b"]],["^ ","^0","b"]]'));
-Assert::equal([(object)['aaaa' => 'b'], [(object)['aaaa' => 'b']]], r('[["^ ","aaaa","b"],[["^ ","^0","b"]]]'));
+Assert::equal('[["^ ","aaaa","b"],["^ ","^0","b"],["^ ","^0","b"]]', w([new Map(['aaaa', 'b']), new Map(['aaaa', 'b']), new Map(['aaaa', 'b'])]));
+Assert::equal('[[["^ ","aaaa","b"]],["^ ","^0","b"]]', w([[new Map(['aaaa', 'b'])], new Map(['aaaa', 'b'])]));
+Assert::equal('[["^ ","aaaa","b"],[["^ ","^0","b"]]]', w([new Map(['aaaa', 'b']), [new Map(['aaaa', 'b'])]]));
 
-// keywords
-Assert::equal('["~:x"]', w([new Keyword('x')]));
-Assert::equal((string)new Keyword('x'), (string)r('["~:x"]')[0]);
-
-// keywords
-Assert::equal('["~$x"]', w([new Symbol('x')]));
-Assert::equal((string)new Symbol('x'), (string)r('["~$x"]')[0]);
-
-//////////
-// verbose
-//////////
+Assert::equal([new Map(['aaaa', 'b']), new Map(['aaaa', 'b']), new Map(['aaaa', 'b'])], r('[["^ ","aaaa","b"],["^ ","^0","b"],["^ ","^0","b"]]'));
+Assert::equal([[new Map(['aaaa', 'b'])], new Map(['aaaa', 'b'])], r('[[["^ ","aaaa","b"]],["^ ","^0","b"]]'));
+Assert::equal([new Map(['aaaa', 'b']), [new Map(['aaaa', 'b'])]], r('[["^ ","aaaa","b"],[["^ ","^0","b"]]]'));
 
 //-------------------------
-// write
+// extensions
 
-// simple write
-Assert::equal('{"~#\'":"foo"}', wv('foo'));
-Assert::equal('{"~#\'":0}', wv(0));
-Assert::equal('{"~#\'":1}', wv(1));
-Assert::equal('{"~#\'":2}', wv(2));
-Assert::equal('{"~#\'":2.5}', wv(2.5));
-Assert::equal('{"~#\'":null}', wv(null));
-Assert::equal('{"~#\'":true}', wv(true));
-Assert::equal('{"~#\'":false}', wv(false));
-Assert::equal('{"~#\'":"~zNaN"}', wv(NAN));
-Assert::equal('{"~#\'":"~zINF"}', wv(INF));
-Assert::equal('{"~#\'":"~z-INF"}', wv(-INF));
+Assert::equal('["~m482196050"]', w([new DateTime('1985-04-12T23:20:50.52Z')]));
+//Assert::equal([new DateTime('1985-04-12T23:20:50.52Z')], r('["~m482196050"]'));
 
-// vector simple write
-Assert::equal('[]', wv([]));
-Assert::equal('["foo"]', wv(['foo']));
-Assert::equal('[0]', wv([0]));
-Assert::equal('[1]', wv([1]));
-Assert::equal('[2]', wv([2]));
-Assert::equal('[2.5]', wv([2.5]));
-Assert::equal('[null]', wv([null]));
-Assert::equal('[true]', wv([true]));
-Assert::equal('[false]', wv([false]));
-Assert::equal('[1,2,3]', wv([1, 2, 3]));
-Assert::equal('["","a","ab","abc"]', wv(['', 'a', 'ab', 'abc']));
-Assert::equal('["~zNaN"]', wv([NAN]));
-Assert::equal('["~zINF"]', wv([INF]));
-Assert::equal('["~z-INF"]', wv([-INF]));
+Assert::equal('["~bYWJj"]', w([new Bytes('abc')]));
+Assert::equal([new Bytes('abc')], r('["~bYWJj"]'));
 
-Assert::equal('["~~foo"]', w(['~foo']));
-Assert::equal('["~^foo"]', w(['^foo']));
+Assert::equal('["~rhttp://php.net/"]', w([new URI('http://php.net/')]));
+Assert::equal([new URI('http://php.net/')], r('["~rhttp://php.net/"]'));
 
-// map simple write
-Assert::equal('{}', wv((object)[]));
-Assert::equal('{"foo":"bar"}', wv((object)['foo' => 'bar']));
-Assert::equal('{"~i6":"six"}', wv((object)[6 => 'six']));
+Assert::equal('["~u531a379e-31bb-4ce1-8690-158dceb64be6"]', w([new UUID('531a379e-31bb-4ce1-8690-158dceb64be6')]));
+Assert::equal([new UUID('531a379e-31bb-4ce1-8690-158dceb64be6')], r('["~u531a379e-31bb-4ce1-8690-158dceb64be6"]'));
 
-// mixed/nested write
-Assert::equal('[[1,2,3],[[4]]]', wv([[1, 2, 3], [[4]]]));
-Assert::equal('[{"foo":["bar",true,1.25]}]', wv([(object)['foo' => ['bar', true, 1.25]]]));
-
-// custom write
-Assert::equal('{"~#point":[10,20]}', wv(new Point(10, 20)));
-Assert::equal('{"~#circle":[{"~#point":[10,20]},5]}', wv(new Circle(new Point(10, 20), 5)));
-
-Assert::exception(function() {
-  wv(new UnregisteredExtension());
-}, 'transit\TransitException');
-
-//-------------------------
-// read
-
-Assert::exception(function() {
-  rv('[');
-}, 'transit\TransitException');
-
-Assert::exception(function() {
-  rv('{"~#\'"}');
-}, 'transit\TransitException');
-
-Assert::exception(function() {
-  rv('{1}');
-}, 'transit\TransitException');
-
-Assert::exception(function() {
-  rv('{"~#\'":"a","b":"c"}');
-}, 'transit\TransitException');
-
-// BC read
-Assert::equal('foo', rv('"foo"'));
-Assert::equal(0, rv('0'));
-Assert::equal(1, rv('1'));
-Assert::equal(2, rv('2'));
-Assert::equal(2.5, rv('2.5'));
-Assert::equal(null, rv('null'));
-Assert::equal(true, rv('true'));
-Assert::equal(false, rv('false'));
-
-// simple read
-Assert::equal('foo', rv('{"~#\'":"foo"}'));
-Assert::equal(0, rv('{"~#\'":0}'));
-Assert::equal(1, rv('{"~#\'":1}'));
-Assert::equal(2, rv('{"~#\'":2}'));
-Assert::equal(2.5, rv('{"~#\'":2.5}'));
-Assert::equal(null, rv('{"~#\'":null}'));
-Assert::equal(true, rv('{"~#\'":true}'));
-Assert::equal(false, rv('{"~#\'":false}'));
-
-Assert::equal(['~foo'], r('["~~foo"]'));
-Assert::equal(['^foo'], r('["~^foo"]'));
-
-// vector simple read
-Assert::equal([], rv('[]'));
-Assert::equal(['foo'], rv('["foo"]'));
-Assert::equal([0], rv('[0]'));
-Assert::equal([1], rv('[1]'));
-Assert::equal([2], rv('[2]'));
-Assert::equal([2.5], rv('[2.5]'));
-Assert::equal([null], rv('[null]'));
-Assert::equal([true], rv('[true]'));
-Assert::equal([false], rv('[false]'));
-Assert::equal([1, 2, 3], rv('[1,2,3]'));
-Assert::equal(['', 'a', 'ab', 'abc'], rv('["","a","ab","abc"]'));
-Assert::nan(rv('["~zNaN"]')[0]);
-Assert::equal([INF], rv('["~zINF"]'));
-Assert::equal([-INF],rv('["~z-INF"]'));
-
-// map simple read
-Assert::equal((object)[], rv('{}'));
-Assert::equal((object)['foo' => 'bar'], rv('{"foo":"bar"}'));
-Assert::equal((object)[6 => 'six'], rv('{"~i6":"six"}'));
-
-// mixed/nested read
-Assert::equal([[1, 2, 3], [[4]]], rv('[[1,2,3],[[4]]]'));
-Assert::equal([(object)['foo' => ['bar', true, 1.25]]], rv('[{"foo":["bar",true,1.25]}]'));
-
-// custom read
-Assert::equal(new Point(10, 20), rv('{"~#point":[10,20]}'));
-Assert::equal(new Circle(new Point(10, 20), 5), rv('{"~#circle":[{"~#point":[10,20]},5]}'));
-
-// caching
-Assert::equal('[{"aaaa":"b"},{"^0":"b"},{"^0":"b"}]', wv([(object)['aaaa' => 'b'], (object)['aaaa' => 'b'], (object)['aaaa' => 'b']]));
-Assert::equal('[[{"aaaa":"b"}],{"^0":"b"}]', wv([[(object)['aaaa' => 'b']], (object)['aaaa' => 'b']]));
-Assert::equal('[{"aaaa":"b"},[{"^0":"b"}]]', wv([(object)['aaaa' => 'b'], [(object)['aaaa' => 'b']]]));
-
-Assert::equal([(object)['aaaa' => 'b'], (object)['aaaa' => 'b'], (object)['aaaa' => 'b']], rv('[{"aaaa":"b"},{"^0":"b"},{"^0":"b"}]'));
-Assert::equal([[(object)['aaaa' => 'b']], (object)['aaaa' => 'b']], rv('[[{"aaaa":"b"}],{"^0":"b"}]'));
-Assert::equal([(object)['aaaa' => 'b'], [(object)['aaaa' => 'b']]], rv('[{"aaaa":"b"},[{"^0":"b"}]]'));
-
-// keywords
-Assert::equal('["~:x"]', wv([new Keyword('x')]));
-Assert::equal((string)new Keyword('x'), (string)rv('["~:x"]')[0]);
-
-// keywords
-Assert::equal('["~$x"]', w([new Symbol('x')]));
-Assert::equal((string)new Symbol('x'), (string)r('["~$x"]')[0]);
+Assert::equal('["~ca"]', w([new Char('a')]));
+Assert::equal([new Char('a')], r('["~ca"]'));

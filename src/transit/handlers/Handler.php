@@ -2,7 +2,7 @@
 
 namespace transit\handlers;
 
-interface ExtensionHandler {
+interface Handler {
 
     function tag();
 

@@ -2,13 +2,17 @@
 
 namespace transit\handlers;
 
-class SpecialNumberHandler implements GroundHandler {
+class SpecialNumberHandler implements Handler {
+
+    public function tag() {
+        return 'z';
+    }
 
     // see FloatHandler
-    public function representation($handler, $obj, $asKey) {}
+    public function type() {}
 
     // see FloatHandler
-    public function verboseRepresentation($handler, $obj, $asKey) {}
+    public function representation($obj) {}
 
     public function resolve($obj) {
         $table = ['NaN' => NAN, 'INF' => INF, '-INF' => -INF];
