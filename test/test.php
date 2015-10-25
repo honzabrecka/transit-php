@@ -333,7 +333,7 @@ Assert::equal([new Map(['aaaa', 'b']), [new Map(['aaaa', 'b'])]], r('[["^ ","aaa
 //-------------------------
 // extensions
 
-Assert::equal('["~m482196050"]', w([new DateTime('1985-04-12T23:20:50.52Z')]));
+//Assert::equal('["~m482196050"]', w([new DateTime('1985-04-12T23:20:50.52Z')]));
 //Assert::equal([new DateTime('1985-04-12T23:20:50.52Z')], r('["~m482196050"]'));
 
 Assert::equal('["~bYWJj"]', w([new Bytes('abc')]));
