@@ -1,5 +1,8 @@
 {
   "name": "honzabrecka/transit-php",
+  "type": "library",
+  "description": "Transit for PHP.",
+  "keywords": ["transit", "data", "format"],
   "authors": [
     {
       "name": "Jan Břečka",
