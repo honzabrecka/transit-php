@@ -353,4 +353,4 @@ $l->push('a');
 $l->push('b');
 $l->push('c');
 Assert::equal('["~#list",["a","b","c"]]', w($l));
-Assert::equal($l, r('["~#list",["a","b","c"]]'));
+Assert::equal(iterator_to_array($l), iterator_to_array(r('["~#list",["a","b","c"]]')));
