@@ -8,6 +8,7 @@ use transit\handlers\SpecialNumberHandler;
 use transit\handlers\KeywordHandler;
 use transit\handlers\SymbolHandler;
 use transit\handlers\SetHandler;
+use transit\handlers\ListHandler;
 use transit\handlers\DateTimeHandler;
 use transit\handlers\URIHandler;
 use transit\handlers\UUIDHandler;
@@ -48,6 +49,7 @@ class Transit {
         $this->registerHandler(new KeywordHandler());
         $this->registerHandler(new SymbolHandler());
         $this->registerHandler(new SetHandler());
+        $this->registerHandler(new ListHandler());
         $this->registerHandler(new DateTimeHandler());
         $this->registerHandler(new URIHandler());
         $this->registerHandler(new UUIDHandler());

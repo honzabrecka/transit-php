@@ -347,3 +347,10 @@ Assert::equal([new UUID('531a379e-31bb-4ce1-8690-158dceb64be6')], r('["~u531a379
 
 Assert::equal('["~ca"]', w([new Char('a')]));
 Assert::equal([new Char('a')], r('["~ca"]'));
+
+$l = new SplDoublyLinkedList();
+$l->push('a');
+$l->push('b');
+$l->push('c');
+Assert::equal('["~#list",["a","b","c"]]', w($l));
+Assert::equal($l, r('["~#list",["a","b","c"]]'));
