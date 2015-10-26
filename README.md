@@ -45,3 +45,6 @@ $transit->write([new Map(['foo', ['bar', true, 1.25]])]);
 |cmap|transit\Map|transit\Map|
 |set|transit\Set|transit\Set|
 |list|SplDoublyLinkedList|SplDoublyLinkedList|
+|uri|transit\URI|transit\URI|
+|uuid|transit\UUID|transit\UUID|
+|char|transit\Char|transit\Char|
