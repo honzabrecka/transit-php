@@ -108,7 +108,7 @@ class JSONReader implements Reader {
 
     private function emitString($input, $asKey) {
         if ($input == '') return $input;
-        if ($input[0] == '~') return $this->emitScalarExtension(substr($input, 1));
+        if ($input[0] == '~') return $this->emitScalarExtension(substr($input, 1), $asKey);
         if ($input[0] == '^') return $this->cache->get($input);
         return $this->cached($input, gettype(''), $asKey);
     }
@@ -136,12 +136,16 @@ class JSONReader implements Reader {
         return new Map($result);
     }
 
-    private function emitScalarExtension($input) {
+    private function emitScalarExtension($input, $asKey) {
         $tag = substr($input, 0, 1);
         $value = substr($input, 1);
         return isset($this->groundHandlers[$tag])
             ? $this->groundHandlers[$tag]($value)
-            : $this->extensionHandler($tag)->resolve($value);
+            : $this->cached(
+                $this->extensionHandler($tag)->resolve($value),
+                $this->extensionHandler($tag)->type(),
+                $asKey
+            );
     }
 
     private function emitCompositeExtension(array $input) {

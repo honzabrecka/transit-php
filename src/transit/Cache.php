@@ -19,7 +19,7 @@ class Cache {
     private $index = 0;
 
     public function save($value, $type, $mode) {
-        if (!$this->cacheable($type, $value)) {
+        if (!$this->cacheable($value, $type)) {
             return $value;
         }
 
@@ -40,14 +40,14 @@ class Cache {
         return $this->cache[$this->codeToIndex($value)];
     }
 
-    private function cacheable($type, $value) {
-        $cacheableTypes = [gettype('') => true, Keyword::class => true, Symbol::class => true];
-        return isset($cacheableTypes[$type]) && strlen($value) > 3;
+    private function cacheable($value, $type) {
+        $cacheableTypes = [gettype('') => 3, Keyword::class => 1, Symbol::class => 1];
+        return isset($cacheableTypes[$type]) && strlen($value) > $cacheableTypes[$type];
     }
 
     private function indexToCode($index) {
-        $hi = $index / self::CACHE_CODE_DIGITS;
-        $lo = $index % self::CACHE_CODE_DIGITS;
+        $hi = (int)($index / self::CACHE_CODE_DIGITS);
+        $lo = (int)($index % self::CACHE_CODE_DIGITS);
         return $hi == 0
             ? self::SUB_STR . chr($lo + self::BASE_CHAR_INDEX)
             : self::SUB_STR . chr($hi + self::BASE_CHAR_INDEX) . chr($lo + self::BASE_CHAR_INDEX);

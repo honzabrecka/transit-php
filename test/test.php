@@ -354,3 +354,27 @@ $l->push('b');
 $l->push('c');
 Assert::equal('["~#list",["a","b","c"]]', w($l));
 Assert::equal(iterator_to_array($l), iterator_to_array(r('["~#list",["a","b","c"]]')));
+
+Assert::equal('[["^ ","~$aa",1,"~$bb",2],["^ ","^0",3,"^1",4],["^ ","^0",5,"^1",6]]', w([
+  new Map([new Symbol('aa'), 1, new Symbol('bb'), 2]),
+  new Map([new Symbol('aa'), 3, new Symbol('bb'), 4]),
+  new Map([new Symbol('aa'), 5, new Symbol('bb'), 6])
+]));
+
+Assert::equal([
+  new Map([new Symbol('aa'), 1, new Symbol('bb'), 2]),
+  new Map([new Symbol('aa'), 3, new Symbol('bb'), 4]),
+  new Map([new Symbol('aa'), 5, new Symbol('bb'), 6])
+], r('[["^ ","~$aa",1,"~$bb",2],["^ ","^0",3,"^1",4],["^ ","^0",5,"^1",6]]'));
+
+Assert::equal('[["^ ","~:aa",1,"~:bb",2],["^ ","^0",3,"^1",4],["^ ","^0",5,"^1",6]]', w([
+  new Map([new Keyword('aa'), 1, new Keyword('bb'), 2]),
+  new Map([new Keyword('aa'), 3, new Keyword('bb'), 4]),
+  new Map([new Keyword('aa'), 5, new Keyword('bb'), 6])
+]));
+
+Assert::equal([
+  new Map([new Keyword('aa'), 1, new Keyword('bb'), 2]),
+  new Map([new Keyword('aa'), 3, new Keyword('bb'), 4]),
+  new Map([new Keyword('aa'), 5, new Keyword('bb'), 6])
+], r('[["^ ","~:aa",1,"~:bb",2],["^ ","^0",3,"^1",4],["^ ","^0",5,"^1",6]]'));
