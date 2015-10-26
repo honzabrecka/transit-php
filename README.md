@@ -14,6 +14,12 @@ between applications, it should not yet be used for storing data
 durably over time. This recommendation will change when the
 specification is complete._ 
 
+## Installation
+
+```
+$ composer require honzabrecka/transit-php
+```
+
 ## Usage
 
 ```php
