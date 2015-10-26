@@ -378,3 +378,6 @@ Assert::equal([
   new Map([new Keyword('aa'), 3, new Keyword('bb'), 4]),
   new Map([new Keyword('aa'), 5, new Keyword('bb'), 6])
 ], r('[["^ ","~:aa",1,"~:bb",2],["^ ","^0",3,"^1",4],["^ ","^0",5,"^1",6]]'));
+
+Assert::equal('["~~abc"]', w(['~abc']));
+Assert::equal(['~abc'], r('["~~abc"]'));
