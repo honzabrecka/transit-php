@@ -231,7 +231,9 @@ Assert::exception(function() {
   w((object)['a' => 'b']);
 }, 'transit\TransitException');
 
-Assert::equal('["value"]', w(['key' => 'value']));
+Assert::equal('["^ ","key","value"]', w(['key' => 'value']));
+Assert::equal('["^ ","~i0","a","x","b"]', w([0 => 'a', 'x' => 'b']));
+Assert::equal('["a","b"]', w([0 => 'a', '1' => 'b']));
 
 //-------------------------
 // read

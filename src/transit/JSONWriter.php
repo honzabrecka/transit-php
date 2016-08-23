@@ -36,6 +36,16 @@ class JSONWriter implements Writer {
             gettype([]) => function($obj, $_) {
                 $result = [];
 
+                if ($this->isAssoc($obj)) {
+                    foreach ($obj as $key => $value) {
+                        $result[] = $this->handle($key, true);
+                        $result[] = $this->handle($value, false);
+                    }
+
+                    array_unshift($result, '^ ');
+                    return $result;
+                }
+
                 foreach ($obj as $value) {
                     $result[] = $this->handle($value);
                 }
@@ -50,7 +60,6 @@ class JSONWriter implements Writer {
                 $handledValue = null;
                 $compositeKey = false;
                 $i = 0;
-                $asKey = false;
 
                 foreach ($obj->toArray() as $value) {
                     $asKey = $i++ % 2 == 0;
@@ -123,6 +132,15 @@ class JSONWriter implements Writer {
         return $asKey
             ? $this->cache->save($value, $type, Cache::WRITE)
             : $value;
+    }
+
+    private function isAssoc($value) {
+        foreach (array_keys($value) as $k => $v) {
+            if ($k !== $v) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
