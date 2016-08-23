@@ -32,6 +32,23 @@ class Map implements \ArrayAccess {
         return $this->data;
     }
 
+    public function toAssocArray() {
+        $result = [];
+        $i = 0;
+        $key = null;
+
+        foreach ($this->toArray() as $value) {
+            $i++ %2 === 0 ? $key = $value : $result[$this->stringify($key)] = $value;
+        }
+
+        return $result;
+    }
+
+    private function stringify($value) {
+        if (gettype($value) === gettype(false)) return $value === true ? '1' : '0';
+        return (string)$value;
+    }
+
     public function offsetSet($offset, $value) {
         $hash = $this->hash($offset);
 

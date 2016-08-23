@@ -383,3 +383,15 @@ Assert::equal([
 
 Assert::equal('["~~abc"]', w(['~abc']));
 Assert::equal(['~abc'], r('["~~abc"]'));
+
+// Map->assocArray
+Assert::equal([], (new Map([]))->toAssocArray());
+Assert::equal(['a' => 'b'], (new Map(['a', 'b']))->toAssocArray());
+Assert::equal(['2' => 'b'], (new Map([2, 'b']))->toAssocArray());
+Assert::equal(['2.2' => 'b'], (new Map([2.2, 'b']))->toAssocArray());
+Assert::equal(['NAN' => 'b'], (new Map([NAN, 'b']))->toAssocArray());
+Assert::equal(['INF' => 'b'], (new Map([INF, 'b']))->toAssocArray());
+Assert::equal(['-INF' => 'b'], (new Map([-INF, 'b']))->toAssocArray());
+Assert::equal(['1' => 'b'], (new Map([true, 'b']))->toAssocArray());
+Assert::equal(['0' => 'b'], (new Map([false, 'b']))->toAssocArray());
+Assert::equal(['a' => 'b'], (new Map([new Keyword('a'), 'b']))->toAssocArray());
