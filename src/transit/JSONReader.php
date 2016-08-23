@@ -15,7 +15,10 @@ class JSONReader implements Reader {
 
     private $groundHandlers;
 
-    public function __construct() {
+    private $useAssocArrayInsteadOfMap;
+
+    public function __construct($useAssocArrayInsteadOfMap = false) {
+        $this->useAssocArrayInsteadOfMap = $useAssocArrayInsteadOfMap;
         $this->groundHandlers = [
             '_' => function($_) {
                 return null;
@@ -71,7 +74,7 @@ class JSONReader implements Reader {
 
     private function emitComposite(array $input) {
         if (count($input) == 0) return $input;
-        if ($this->isMap($input)) return $this->emitMap($this->rest($input));
+        if ($this->isMap($input)) return $this->emitMap($this->rest($input), false);
         if ($this->isCompositeExtension($input)) return $this->emitCompositeExtension($input);
         return $this->emitArray($input);
     }
@@ -119,7 +122,7 @@ class JSONReader implements Reader {
         }, $input);
     }
 
-    private function emitMap(array $input) {
+    private function emitMap(array $input, $composite) {
         if (count($input) % 2 == 1) {
             throw new TransitException('Input is not valid transit.');
         }
@@ -131,7 +134,11 @@ class JSONReader implements Reader {
             $result[] = $this->handle($value, $i++ % 2 == 0);
         }
 
-        return new Map($result);
+        $map = new Map($result);
+
+        return $this->useAssocArrayInsteadOfMap && !$composite
+            ? $map->toAssocArray()
+            : $map;
     }
 
     private function emitScalarExtension($input, $asKey) {
@@ -154,7 +161,7 @@ class JSONReader implements Reader {
         $tag = substr($input[0], 2);
 
         return $tag == 'cmap'
-            ? $this->emitMap($input[1])
+            ? $this->emitMap($input[1], true)
             : $this->extensionHandler($tag)->resolve($this->handle($input[1]));
     }
 

@@ -395,3 +395,21 @@ Assert::equal(['-INF' => 'b'], (new Map([-INF, 'b']))->toAssocArray());
 Assert::equal(['1' => 'b'], (new Map([true, 'b']))->toAssocArray());
 Assert::equal(['0' => 'b'], (new Map([false, 'b']))->toAssocArray());
 Assert::equal(['a' => 'b'], (new Map([new Keyword('a'), 'b']))->toAssocArray());
+
+function cr($input) {
+    return (new Transit(new JSONReader(true), new JSONWriter()))->read($input);
+}
+
+// use assoc arrays instead of maps
+Assert::equal([], cr('["^ "]'));
+Assert::equal(['foo' => 'bar'], cr('["^ ","foo","bar"]'));
+Assert::equal([6 => 'six'], cr('["^ ","~i6","six"]'));
+Assert::equal(['1.25' => 'x'], cr('["^ ","~d1.25","x"]'));
+Assert::equal(['1' => 'x'], cr('["^ ","~?t","x"]'));
+Assert::equal(['0' => 'x'], cr('["^ ","~?f","x"]'));
+Assert::equal(['' => 'x'], cr('["^ ","~_","x"]'));
+Assert::equal(['a' => 'b'], cr('["^ ","~$a","b"]'));
+Assert::equal(['a' => 'b'], cr('["^ ","~:a","b"]'));
+Assert::equal(new Map([['a'], 'b']), cr('["~#cmap",[["a"],"b"]]'));
+Assert::equal(new Map([new Set(['a']), 'b']), cr('["~#cmap",[["~#set",["a"]],"b"]]'));
+Assert::equal(new Map([['foo' => 'bar'], 'b']), cr('["~#cmap",[["^ ","foo","bar"],"b"]]'));
