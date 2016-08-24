@@ -231,9 +231,7 @@ Assert::exception(function() {
   w((object)['a' => 'b']);
 }, 'transit\TransitException');
 
-Assert::equal('["^ ","key","value"]', w(['key' => 'value']));
-Assert::equal('["^ ","~i0","a","x","b"]', w([0 => 'a', 'x' => 'b']));
-Assert::equal('["a","b"]', w([0 => 'a', '1' => 'b']));
+Assert::equal('["value"]', w(['key' => 'value']));
 
 //-------------------------
 // read
@@ -396,8 +394,16 @@ Assert::equal(['1' => 'b'], (new Map([true, 'b']))->toAssocArray());
 Assert::equal(['0' => 'b'], (new Map([false, 'b']))->toAssocArray());
 Assert::equal(['a' => 'b'], (new Map([new Keyword('a'), 'b']))->toAssocArray());
 
+function ct() {
+  return new Transit(new JSONReader(true), new JSONWriter(true));
+}
+
 function cr($input) {
-    return (new Transit(new JSONReader(true), new JSONWriter()))->read($input);
+  return ct()->read($input);
+}
+
+function cw($input) {
+  return ct()->write($input);
 }
 
 // use assoc arrays instead of maps
@@ -413,3 +419,7 @@ Assert::equal(['a' => 'b'], cr('["^ ","~:a","b"]'));
 Assert::equal(new Map([['a'], 'b']), cr('["~#cmap",[["a"],"b"]]'));
 Assert::equal(new Map([new Set(['a']), 'b']), cr('["~#cmap",[["~#set",["a"]],"b"]]'));
 Assert::equal(new Map([['foo' => 'bar'], 'b']), cr('["~#cmap",[["^ ","foo","bar"],"b"]]'));
+
+Assert::equal('["^ ","key","value"]', cw(['key' => 'value']));
+Assert::equal('["^ ","~i0","a","x","b"]', cw([0 => 'a', 'x' => 'b']));
+Assert::equal('["a","b"]', cw([0 => 'a', '1' => 'b']));

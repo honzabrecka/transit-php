@@ -12,7 +12,10 @@ class JSONWriter implements Writer {
 
     private $groundHandlers;
 
-    public function __construct() {
+    private $supportAssocArray;
+
+    public function __construct($supportAssocArray = false) {
+        $this->supportAssocArray = $supportAssocArray;
         $this->groundHandlers = [
             gettype('') => function($obj, $asKey) {
                 $bad = ['~' => true, '^' => true];
@@ -36,7 +39,7 @@ class JSONWriter implements Writer {
             gettype([]) => function($obj, $_) {
                 $result = [];
 
-                if ($this->isAssoc($obj)) {
+                if ($this->supportAssocArray && $this->isAssoc($obj)) {
                     foreach ($obj as $key => $value) {
                         $result[] = $this->handle($key, true);
                         $result[] = $this->handle($value, false);
