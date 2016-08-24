@@ -30,7 +30,19 @@ use transit\Map;
 
 $transit = new Transit(new JSONReader(), new JSONWriter());
 $transit->read('["^ ","foo","bar"]');
-$transit->write([new Map(['foo', ['bar', true, 1.25]])]);
+$transit->write(new Map(['foo', 'bar']));
+```
+
+You can use assoc array instead of transit\Map. It comes with a price (string keys only), therefore it's disabled by default.
+
+```php
+use transit\JSONReader;
+use transit\JSONWriter;
+use transit\Transit;
+
+$transit = new Transit(new JSONReader(true), new JSONWriter(true));
+$transit->read('["^ ","foo","bar"]');
+$transit->write(['foo' => 'bar']);
 ```
 
 ## Default Type Mapping
@@ -47,7 +59,7 @@ $transit->write([new Map(['foo', ['bar', true, 1.25]])]);
 |symbol|transit\Symbol|transit\Symbol|
 |time|DateTime|DateTime|
 |array|array|array|
-|map|transit\Map|transit\Map|
+|map|transit\Map or assoc array|transit\Map or assoc array|
 |cmap|transit\Map|transit\Map|
 |set|transit\Set|transit\Set|
 |list|SplDoublyLinkedList|SplDoublyLinkedList|
