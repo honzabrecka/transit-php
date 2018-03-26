@@ -25,6 +25,7 @@ class Cache {
 
         if ($mode == self::READ) {
             $this->cache[$this->index++] = $value;
+            $this->checkBounds();
             return $value;
         }
 
@@ -33,11 +34,19 @@ class Cache {
         }
 
         $this->cache[$value] = $this->indexToCode($this->index++);
+        $this->checkBounds();
         return $value;
     }
 
     public function get($value) {
         return $this->cache[$this->codeToIndex($value)];
+    }
+
+    private function checkBounds() {
+        if (count($this->cache) === 1937) {
+            $this->cache = [];
+            $this->index = 0;
+        }
     }
 
     private function cacheable($value, $type, $mode) {
