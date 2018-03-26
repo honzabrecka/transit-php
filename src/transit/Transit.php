@@ -13,6 +13,7 @@ use transit\handlers\DateTimeHandler;
 use transit\handlers\URIHandler;
 use transit\handlers\UUIDHandler;
 use transit\handlers\CharHandler;
+use transit\handlers\TimestampHandler;
 use transit\handlers\ArbitraryPrecisionDecimalHandler;
 use transit\handlers\ArbitraryPrecisionIntegerHandler;
 
@@ -56,6 +57,7 @@ class Transit {
         $this->registerHandler(new URIHandler());
         $this->registerHandler(new UUIDHandler());
         $this->registerHandler(new CharHandler());
+        $this->registerHandler(new TimestampHandler());
         $this->registerHandler(new ArbitraryPrecisionDecimalHandler());
         $this->registerHandler(new ArbitraryPrecisionIntegerHandler());
     }
