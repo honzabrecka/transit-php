@@ -15,6 +15,8 @@ use transit\Bytes;
 use transit\URI;
 use transit\UUID;
 use transit\Char;
+use transit\ArbitraryPrecisionInteger;
+use transit\ArbitraryPrecisionDecimal;
 use transit\TaggedValue;
 
 //-------------------------
@@ -198,6 +200,8 @@ Assert::equal('["~zINF"]', w([INF]));
 Assert::equal('["~z-INF"]', w([-INF]));
 Assert::equal('["~:a"]', w([new Keyword('a')]));
 Assert::equal('["~$a"]', w([new Symbol('a')]));
+Assert::equal('["~n123"]', w([new ArbitraryPrecisionInteger('123')]));
+Assert::equal('["~f123.4"]', w([new ArbitraryPrecisionDecimal('123.4')]));
 
 Assert::equal('["~~foo"]', w(['~foo']));
 Assert::equal('["~^foo"]', w(['^foo']));
@@ -270,6 +274,8 @@ Assert::equal(INF, r('"~zINF"'));
 Assert::equal(-INF, r('"~z-INF"'));
 Assert::equal(new Keyword('a'), r('"~:a"'));
 Assert::equal(new Symbol('a'), r('"~$a"'));
+Assert::equal([new ArbitraryPrecisionInteger('123')], r('["~n123"]'));
+Assert::equal([new ArbitraryPrecisionDecimal('123.4')], r('["~f123.4"]'));
 
 Assert::equal('foo', r('["~#\'","foo"]'));
 Assert::equal(0, r('["~#\'",0]'));
