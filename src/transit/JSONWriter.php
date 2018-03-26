@@ -111,10 +111,9 @@ class JSONWriter implements Writer {
     private function handleExtension($type, $input, $asKey = false) {
         $handler = $this->extensionHandler($type);
         $tag = $handler->tag($input);
-        $result = $this->handle($handler->representation($input));
         return $this->isScalarExtension($tag)
-            ? $this->cached('~' . $tag . $result, $type, $asKey)
-            : ['~#' . $tag, $result];
+            ? $this->cached('~' . $tag . $this->handle($handler->representation($input)), $type, $asKey)
+            : [$this->cached('~#' . $tag, gettype(''), true), $this->handle($handler->representation($input))];
     }
 
     private function type($input) {
