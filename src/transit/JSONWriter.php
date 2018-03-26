@@ -140,9 +140,7 @@ class JSONWriter implements Writer {
     }
 
     private function cached($value, $type, $asKey) {
-        return $asKey || $type === Keyword::class || $type === Symbol::class
-            ? $this->cache->save($value, $type, Cache::WRITE)
-            : $value;
+        return $this->cache->save($value, $type, $asKey, Cache::WRITE);
     }
 
     private function isAssoc($value) {

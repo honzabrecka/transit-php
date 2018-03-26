@@ -185,9 +185,7 @@ class JSONReader implements Reader {
     }
 
     private function cached($value, $type, $asKey) {
-        return $asKey || $type === Keyword::class || $type === Symbol::class
-            ? $this->cache->save($value, $type, Cache::READ)
-            : $value;
+        return $this->cache->save($value, $type, $asKey, Cache::READ);
     }
 
     private function rest(array $input) {
