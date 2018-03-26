@@ -85,7 +85,7 @@ class JSONReader implements Reader {
     }
 
     private function isCompositeExtension(array $input) {
-        return is_string($input[0]) && substr($input[0], 0, 2) == '~#';
+        return is_string($input[0]) && (substr($input[0], 0, 2) == '~#' || substr($input[0], 0, 1) == '^');
     }
 
     private function checkVerboseComposite($input) {
@@ -159,7 +159,7 @@ class JSONReader implements Reader {
             throw new TransitException('Input is not valid transit.');
         }
 
-        $tag = substr($input[0], 2);
+        $tag = substr($this->cachedTag($input[0]), 2);
 
         return $tag == 'cmap'
             ? $this->emitMap($input[1], true)
@@ -174,6 +174,12 @@ class JSONReader implements Reader {
 
     private function unrecognizedExtensionHandler($tag) {
         return new TaggedValueHandler($tag);
+    }
+
+    private function cachedTag($value) {
+        return substr($value, 0, 1) == '^'
+            ? $this->cache->get($value)
+            : $this->cached($value, gettype(''), true);
     }
 
     private function cached($value, $type, $asKey) {
