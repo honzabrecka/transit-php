@@ -4,6 +4,8 @@ namespace transit;
 
 use transit\Map;
 use transit\Bytes;
+use transit\Keyword;
+use transit\Symbol;
 use transit\handlers\TaggedValueHandler;
 use Nette\Utils\Json;
 use Nette\Utils\JsonException;
@@ -183,7 +185,7 @@ class JSONReader implements Reader {
     }
 
     private function cached($value, $type, $asKey) {
-        return $asKey
+        return $asKey || $type === Keyword::class || $type === Symbol::class
             ? $this->cache->save($value, $type, Cache::READ)
             : $value;
     }
