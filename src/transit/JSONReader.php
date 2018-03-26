@@ -134,7 +134,7 @@ class JSONReader implements Reader {
         $i = 0;
 
         foreach ($input as $value) {
-            $result[] = $this->handle($value, $i++ % 2 == 0);
+            $result[] = $this->handle($value, !$composite && $i++ % 2 == 0);
         }
 
         $map = new Map($result);
