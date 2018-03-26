@@ -15,6 +15,7 @@ use transit\Bytes;
 use transit\URI;
 use transit\UUID;
 use transit\Char;
+use transit\TaggedValue;
 
 //-------------------------
 // structs
@@ -318,6 +319,13 @@ Assert::equal([new Map(['foo', ['bar', true, 1.25]])], r('[["^ ","foo",["bar",tr
 
 Assert::equal(new Point(10, 20), r('["~#point",[10,20]]'));
 Assert::equal(new Circle(new Point(10, 20), 5), r('["~#circle",[["~#point",[10,20]],5]]'));
+
+
+//-------------------------
+// tagged value
+
+Assert::equal(new TaggedValue('abcd', [10, 20]), r('["~#abcd",[10,20]]'));
+Assert::equal('["~#abcd",[10,20]]', w(r('["~#abcd",[10,20]]')));
 
 //-------------------------
 // caching

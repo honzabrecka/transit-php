@@ -2,6 +2,7 @@
 
 namespace transit;
 
+use transit\handlers\TaggedValueHandler;
 use Nette\Utils\Json;
 
 class JSONWriter implements Writer {
@@ -84,7 +85,13 @@ class JSONWriter implements Writer {
     public function write(Cache $cache, $handlers, $input) {
         $this->cache = $cache;
         $this->handlers = $handlers;
+        $this->registerTaggedValueHandler();
         return Json::encode($this->handleTop($input));
+    }
+
+    private function registerTaggedValueHandler() {
+        $handler = new TaggedValueHandler('');
+        $this->handlers[$handler->type()] = $handler;
     }
 
     private function handleTop($input) {
@@ -103,7 +110,7 @@ class JSONWriter implements Writer {
 
     private function handleExtension($type, $input, $asKey = false) {
         $handler = $this->extensionHandler($type);
-        $tag = $handler->tag();
+        $tag = $handler->tag($input);
         $result = $this->handle($handler->representation($input));
         return $this->isScalarExtension($tag)
             ? $this->cached('~' . $tag . $result, $type, $asKey)

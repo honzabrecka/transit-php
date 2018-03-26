@@ -4,6 +4,7 @@ namespace transit;
 
 use transit\Map;
 use transit\Bytes;
+use transit\handlers\TaggedValueHandler;
 use Nette\Utils\Json;
 use Nette\Utils\JsonException;
 
@@ -168,11 +169,11 @@ class JSONReader implements Reader {
     private function extensionHandler($tag) {
         return isset($this->handlers[$tag])
             ? $this->handlers[$tag]
-            : $this->extensionHandlerNotFound($tag);
+            : $this->unrecognizedExtensionHandler($tag);
     }
 
-    private function extensionHandlerNotFound($tag) {
-        throw new TransitException('Undefined handler for tag ' . $tag . '.');
+    private function unrecognizedExtensionHandler($tag) {
+        return new TaggedValueHandler($tag);
     }
 
     private function cached($value, $type, $asKey) {
