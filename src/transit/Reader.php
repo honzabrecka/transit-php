@@ -4,6 +4,6 @@ namespace transit;
 
 interface Reader {
 
-    function read(Cache $cache, $handlers, $input);
+    function read(ReaderCache $cache, $handlers, $input);
 
 }

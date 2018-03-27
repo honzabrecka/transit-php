@@ -9,7 +9,9 @@ class SpecialNumberHandler implements Handler {
     }
 
     // see FloatHandler
-    public function type() {}
+    public function type() {
+        return '__ground';
+    }
 
     // see FloatHandler
     public function representation($obj) {}

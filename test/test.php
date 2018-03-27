@@ -336,13 +336,55 @@ Assert::equal('["~#abcd",[10,20]]', w(r('["~#abcd",[10,20]]')));
 //-------------------------
 // caching
 
-Assert::equal('[["^ ","aaaa","b"],["^ ","^0","b"],["^ ","^0","b"]]', w([new Map(['aaaa', 'b']), new Map(['aaaa', 'b']), new Map(['aaaa', 'b'])]));
-Assert::equal('[[["^ ","aaaa","b"]],["^ ","^0","b"]]', w([[new Map(['aaaa', 'b'])], new Map(['aaaa', 'b'])]));
-Assert::equal('[["^ ","aaaa","b"],[["^ ","^0","b"]]]', w([new Map(['aaaa', 'b']), [new Map(['aaaa', 'b'])]]));
+Assert::equal(
+  '[["^ ","aaaa","b"],["^ ","^0","b"],["^ ","^0","b"]]',
+  w([new Map(['aaaa', 'b']), new Map(['aaaa', 'b']), new Map(['aaaa', 'b'])])
+);
+Assert::equal(
+  '[[["^ ","aaaa","b"]],["^ ","^0","b"]]',
+  w([[new Map(['aaaa', 'b'])], new Map(['aaaa', 'b'])])
+);
+Assert::equal(
+  '[["^ ","aaaa","b"],[["^ ","^0","b"]]]',
+  w([new Map(['aaaa', 'b']), [new Map(['aaaa', 'b'])]])
+);
 
-Assert::equal([new Map(['aaaa', 'b']), new Map(['aaaa', 'b']), new Map(['aaaa', 'b'])], r('[["^ ","aaaa","b"],["^ ","^0","b"],["^ ","^0","b"]]'));
-Assert::equal([[new Map(['aaaa', 'b'])], new Map(['aaaa', 'b'])], r('[[["^ ","aaaa","b"]],["^ ","^0","b"]]'));
-Assert::equal([new Map(['aaaa', 'b']), [new Map(['aaaa', 'b'])]], r('[["^ ","aaaa","b"],[["^ ","^0","b"]]]'));
+// map caches
+Assert::equal(
+  [new Map(['aaaa', 'b']), new Map(['aaaa', 'b']), new Map(['aaaa', 'b'])],
+  r('[["^ ","aaaa","b"],["^ ","^0","b"],["^ ","^0","b"]]')
+);
+Assert::equal(
+  [[new Map(['aaaa', 'b'])], new Map(['aaaa', 'b'])],
+  r('[[["^ ","aaaa","b"]],["^ ","^0","b"]]')
+);
+Assert::equal(
+  [new Map(['aaaa', 'b']), [new Map(['aaaa', 'b'])]],
+  r('[["^ ","aaaa","b"],[["^ ","^0","b"]]]')
+);
+
+Assert::equal(
+  [new Map([new Keyword('aaaa'), 1]), new Map([new Keyword('aaaa'), 1])],
+  r('[["^ ","~:aaaa",1],["^ ","^0",1]]')
+);
+Assert::equal(
+  [new Map([new Keyword('aaaa'), new Keyword('aaaa')]), new Map([new Keyword('aaaa'), new Keyword('aaaa')])],
+  r('[["^ ","~:aaaa","^0"],["^ ","^0","^0"]]')
+);
+Assert::equal(
+  [new Map(['aaaa', new Keyword('aaaa'), 1234, 3, false, 4]), new Map(['aaaa', new Keyword('aaaa'), 1234, 3, false, 4])],
+  r('[["^ ","aaaa","~:aaaa","~i1234",3,"~?f",4],["^ ","^0","^1","^2",3,"~?f",4]]')
+);
+
+// cmap does not cache keys (does not apply for keyword/symbol)
+Assert::equal(
+  [new Map(['aaaa', 1, [], 2]), new Map(['aaaa', 1, [], 2])],
+  r('[["~#cmap",["aaaa",1,[],2]],["^0",["aaaa",1,[],2]]]')
+);
+Assert::equal(
+  [new Map([new Keyword('aaaa'), 1, [], 2]), new Map([new Keyword('aaaa'), 1, [], 2])],
+  r('[["~#cmap",["~:aaaa",1,[],2]],["^0",["^1",1,[],2]]]')
+);
 
 //-------------------------
 // extensions

@@ -51,7 +51,7 @@ class JSONReader implements Reader {
         ];
     }
 
-    public function read(Cache $cache, $handlers, $input) {
+    public function read(ReaderCache $cache, $handlers, $input) {
         $this->cache = $cache;
         $this->handlers = $handlers;
         return $this->handle($this->parse($input));
@@ -116,7 +116,7 @@ class JSONReader implements Reader {
         if ($input == '') return $input;
         if ($input[0] == '~') return $this->emitScalarExtension(substr($input, 1), $asKey);
         if ($input[0] == '^') return $this->cache->get($input);
-        return $this->cached($input, gettype(''), $asKey);
+        return $this->cached($input, $input, gettype(''), $asKey);
     }
 
     private function emitArray(array $input) {
@@ -148,12 +148,8 @@ class JSONReader implements Reader {
         $tag = substr($input, 0, 1);
         $value = substr($input, 1);
         return isset($this->groundHandlers[$tag])
-            ? $this->groundHandlers[$tag]($value)
-            : $this->cached(
-                $this->extensionHandler($tag)->resolve($value),
-                $this->extensionHandler($tag)->type(),
-                $asKey
-            );
+            ? $this->cached('~' . $tag . $value, $this->groundHandlers[$tag]($value), '__ground', $asKey)
+            : $this->cached('~' . $tag . $value, $this->extensionHandler($tag)->resolve($value), $this->extensionHandler($tag)->type(), $asKey);
     }
 
     private function emitCompositeExtension(array $input) {
@@ -181,11 +177,11 @@ class JSONReader implements Reader {
     private function cachedTag($value) {
         return substr($value, 0, 1) == '^'
             ? $this->cache->get($value)
-            : $this->cached($value, gettype(''), true);
+            : $this->cached('~#' . $value, $value, gettype(''), true);
     }
 
-    private function cached($value, $type, $asKey) {
-        return $this->cache->save($value, $type, $asKey, Cache::READ);
+    private function cached($representation, $value, $type, $asKey) {
+        return $this->cache->save($representation, $value, $type, $asKey);
     }
 
     private function rest(array $input) {

@@ -34,7 +34,7 @@ class Transit {
     }
 
     public function read($input) {
-        return $this->reader->read(new Cache(), $this->readHandlers, $input);
+        return $this->reader->read(new ReaderCache(), $this->readHandlers, $input);
     }
 
     public function write($input) {
