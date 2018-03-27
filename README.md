@@ -12,7 +12,7 @@ _NOTE: Transit is a work in progress and may evolve based on feedback.
 As a result, while Transit is a great option for transferring data
 between applications, it should not yet be used for storing data
 durably over time. This recommendation will change when the
-specification is complete._ 
+specification is complete._
 
 ## Installation
 
@@ -60,7 +60,7 @@ $transit->write(['foo' => 'bar']);
 |time|DateTime|DateTime|
 |array|array|array|
 |map|transit\Map or assoc array|transit\Map or assoc array|
-|cmap|transit\Map|transit\Map|
+|cmap|transit\CMap|transit\CMap|
 |set|transit\Set|transit\Set|
 |list|SplDoublyLinkedList|SplDoublyLinkedList|
 |uri|transit\URI|transit\URI|
