@@ -7,5 +7,5 @@ jobs:
     steps:
       - checkout
       - run: composer install
-      - run: cd ~/w && transit-php/bin/transit-format
       - run: vendor/bin/tester -C -p php test/test.php
+      - run: cd ~/w && transit-php/bin/transit-format
