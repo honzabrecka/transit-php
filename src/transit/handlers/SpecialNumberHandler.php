@@ -10,7 +10,7 @@ class SpecialNumberHandler implements Handler {
 
     // see FloatHandler
     public function type() {
-        return '__ground';
+        return gettype('');
     }
 
     // see FloatHandler

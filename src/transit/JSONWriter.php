@@ -2,8 +2,6 @@
 
 namespace transit;
 
-use transit\Keyword;
-use transit\Symbol;
 use transit\handlers\TaggedValueHandler;
 use Nette\Utils\Json;
 
@@ -63,24 +61,27 @@ class JSONWriter implements Writer {
             },
             Map::class => function($obj, $_) {
                 $result = [];
-                $handledValue = null;
-                $compositeKey = false;
                 $i = 0;
 
                 foreach ($obj->toArray() as $value) {
                     $asKey = $i++ % 2 == 0;
-                    $handledValue = $this->handle($value, $asKey);
-                    if ($asKey && !$compositeKey && is_array($handledValue)) $compositeKey = true;
-                    $result[] = $handledValue;
-                }
-
-                if ($compositeKey) {
-                    return ['~#cmap', $result];
+                    $result[] = $this->handle($value, $asKey);
                 }
 
                 array_unshift($result, '^ ');
                 return $result;
             },
+            CMap::class => function($obj, $_) {
+                $tag = $this->cached('~#cmap', gettype(''), true);
+                $result = [];
+                $i = 0;
+
+                foreach ($obj->toArray() as $value) {
+                    $result[] = $this->handle($value, false);
+                }
+
+                return [$tag, $result];
+            }
         ];
     }
 
@@ -106,7 +107,7 @@ class JSONWriter implements Writer {
     private function handle($input, $asKey = false) {
         $type = $this->type($input);
         return isset($this->groundHandlers[$type])
-            ? $this->cached($this->groundHandlers[$type]($input, $asKey), $type, $asKey)
+            ? $this->cached($this->groundHandlers[$type]($input, $asKey), gettype(''), $asKey)
             : $this->handleExtension($type, $input, $asKey);
     }
 
@@ -114,7 +115,7 @@ class JSONWriter implements Writer {
         $handler = $this->extensionHandler($type);
         $tag = $handler->tag($input);
         return $this->isScalarExtension($tag)
-            ? $this->cached('~' . $tag . $this->handle($handler->representation($input)), $type, $asKey)
+            ? $this->cached('~' . $tag . $handler->representation($input), $type, $asKey)
             : [$this->cached('~#' . $tag, gettype(''), true), $this->handle($handler->representation($input))];
     }
 
@@ -140,7 +141,7 @@ class JSONWriter implements Writer {
     }
 
     private function cached($value, $type, $asKey) {
-        return $this->cache->save($value, $type, $asKey, Cache::WRITE);
+        return $this->cache->saveWrite($value, $type, $asKey);
     }
 
     private function isAssoc($value) {

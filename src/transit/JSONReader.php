@@ -2,10 +2,6 @@
 
 namespace transit;
 
-use transit\Map;
-use transit\Bytes;
-use transit\Keyword;
-use transit\Symbol;
 use transit\handlers\TaggedValueHandler;
 use Nette\Utils\Json;
 use Nette\Utils\JsonException;
@@ -51,7 +47,7 @@ class JSONReader implements Reader {
         ];
     }
 
-    public function read(ReaderCache $cache, $handlers, $input) {
+    public function read(Cache $cache, $handlers, $input) {
         $this->cache = $cache;
         $this->handlers = $handlers;
         return $this->handle($this->parse($input));
@@ -115,7 +111,7 @@ class JSONReader implements Reader {
     private function emitString($input, $asKey) {
         if ($input == '') return $input;
         if ($input[0] == '~') return $this->emitScalarExtension(substr($input, 1), $asKey);
-        if ($input[0] == '^') return $this->cache->get($input);
+        if ($input[0] == '^') return $this->cache->getByCode($input);
         return $this->cached($input, $input, gettype(''), $asKey);
     }
 
@@ -137,7 +133,7 @@ class JSONReader implements Reader {
             $result[] = $this->handle($value, !$composite && $i++ % 2 == 0);
         }
 
-        $map = new Map($result);
+        $map = $composite ? new CMap($result) : new Map($result);
 
         return $this->useAssocArrayInsteadOfMap && !$composite
             ? $map->toAssocArray()
@@ -148,7 +144,7 @@ class JSONReader implements Reader {
         $tag = substr($input, 0, 1);
         $value = substr($input, 1);
         return isset($this->groundHandlers[$tag])
-            ? $this->cached('~' . $tag . $value, $this->groundHandlers[$tag]($value), '__ground', $asKey)
+            ? $this->cached('~' . $tag . $value, $this->groundHandlers[$tag]($value), gettype(''), $asKey)
             : $this->cached('~' . $tag . $value, $this->extensionHandler($tag)->resolve($value), $this->extensionHandler($tag)->type(), $asKey);
     }
 
@@ -176,12 +172,12 @@ class JSONReader implements Reader {
 
     private function cachedTag($value) {
         return substr($value, 0, 1) == '^'
-            ? $this->cache->get($value)
-            : $this->cached('~#' . $value, $value, gettype(''), true);
+            ? $this->cache->getByCode($value)
+            : $this->cached($value, $value, gettype(''), true);
     }
 
     private function cached($representation, $value, $type, $asKey) {
-        return $this->cache->save($representation, $value, $type, $asKey);
+        return $this->cache->saveRead($representation, $value, $type, $asKey);
     }
 
     private function rest(array $input) {

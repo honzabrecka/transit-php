@@ -10,6 +10,7 @@ use transit\handlers\Handler;
 use transit\Keyword;
 use transit\Symbol;
 use transit\Map;
+use transit\CMap;
 use transit\Set;
 use transit\Bytes;
 use transit\URI;
@@ -218,9 +219,9 @@ Assert::equal('["^ ","~zINF","x"]', w(new Map([INF, 'x'])));
 Assert::equal('["^ ","~z-INF","x"]', w(new Map([-INF, 'x'])));
 Assert::equal('["^ ","~$a","b"]', w(new Map([new Symbol('a'), 'b'])));
 Assert::equal('["^ ","~:a","b"]', w(new Map([new Keyword('a'), 'b'])));
-Assert::equal('["~#cmap",[["a"],"b"]]', w(new Map([['a'], 'b'])));
-Assert::equal('["~#cmap",[["~#set",["a"]],"b"]]', w(new Map([new Set(['a']), 'b'])));
-Assert::equal('["~#cmap",[["^ ","foo","bar"],"b"]]', w(new Map([new Map(['foo', 'bar']), 'b'])));
+Assert::equal('["~#cmap",[["a"],"b"]]', w(new CMap([['a'], 'b'])));
+Assert::equal('["~#cmap",[["~#set",["a"]],"b"]]', w(new CMap([new Set(['a']), 'b'])));
+Assert::equal('["~#cmap",[["^ ","foo","bar"],"b"]]', w(new CMap([new Map(['foo', 'bar']), 'b'])));
 
 Assert::equal('[[1,2,3],[[4]]]', w([[1, 2, 3], [[4]]]));
 Assert::equal('[["^ ","foo",["bar",true,1.25]]]', w([new Map(['foo', ['bar', true, 1.25]])]));
@@ -316,9 +317,9 @@ Assert::equal(new Map([INF, 'x']), r('["^ ","~zINF","x"]'));
 Assert::equal(new Map([-INF, 'x']), r('["^ ","~z-INF","x"]'));
 Assert::equal(new Map([new Symbol('a'), 'b']), r('["^ ","~$a","b"]'));
 Assert::equal(new Map([new Keyword('a'), 'b']), r('["^ ","~:a","b"]'));
-Assert::equal(new Map([['a'], 'b']), r('["~#cmap",[["a"],"b"]]'));
-Assert::equal(new Map([new Set(['a']), 'b']), r('["~#cmap",[["~#set",["a"]],"b"]]'));
-Assert::equal(new Map([new Map(['foo', 'bar']), 'b']), r('["~#cmap",[["^ ","foo","bar"],"b"]]'));
+Assert::equal(new CMap([['a'], 'b']), r('["~#cmap",[["a"],"b"]]'));
+Assert::equal(new CMap([new Set(['a']), 'b']), r('["~#cmap",[["~#set",["a"]],"b"]]'));
+Assert::equal(new CMap([new Map(['foo', 'bar']), 'b']), r('["~#cmap",[["^ ","foo","bar"],"b"]]'));
 
 Assert::equal([[1, 2, 3], [[4]]], r('[[1,2,3],[[4]]]'));
 Assert::equal([new Map(['foo', ['bar', true, 1.25]])], r('[["^ ","foo",["bar",true,1.25]]]'));
@@ -347,6 +348,30 @@ Assert::equal(
 Assert::equal(
   '[["^ ","aaaa","b"],[["^ ","^0","b"]]]',
   w([new Map(['aaaa', 'b']), [new Map(['aaaa', 'b'])]])
+);
+
+
+Assert::equal(
+  '[["^ ","~:aaaa",1],["^ ","^0",1]]',
+  w([new Map([new Keyword('aaaa'), 1]), new Map([new Keyword('aaaa'), 1])])
+);
+Assert::equal(
+  '[["^ ","~:aaaa","^0"],["^ ","^0","^0"]]',
+  w([new Map([new Keyword('aaaa'), new Keyword('aaaa')]), new Map([new Keyword('aaaa'), new Keyword('aaaa')])])
+);
+Assert::equal(
+  '[["^ ","aaaa","~:aaaa","~i1234",3,"~?f",4],["^ ","^0","^1","^2",3,"~?f",4]]',
+  w([new Map(['aaaa', new Keyword('aaaa'), 1234, 3, false, 4]), new Map(['aaaa', new Keyword('aaaa'), 1234, 3, false, 4])])
+);
+
+// cmap does not cache keys (does not apply for keyword/symbol)
+Assert::equal(
+  '[["~#cmap",["aaaa",1,[],2]],["^0",["aaaa",1,[],2]]]',
+  w([new CMap(['aaaa', 1, [], 2]), new CMap(['aaaa', 1, [], 2])])
+);
+Assert::equal(
+  '[["~#cmap",["~:aaaa",1,[],2]],["^0",["^1",1,[],2]]]',
+  w([new CMap([new Keyword('aaaa'), 1, [], 2]), new CMap([new Keyword('aaaa'), 1, [], 2])])
 );
 
 // map caches
@@ -378,11 +403,11 @@ Assert::equal(
 
 // cmap does not cache keys (does not apply for keyword/symbol)
 Assert::equal(
-  [new Map(['aaaa', 1, [], 2]), new Map(['aaaa', 1, [], 2])],
+  [new CMap(['aaaa', 1, [], 2]), new CMap(['aaaa', 1, [], 2])],
   r('[["~#cmap",["aaaa",1,[],2]],["^0",["aaaa",1,[],2]]]')
 );
 Assert::equal(
-  [new Map([new Keyword('aaaa'), 1, [], 2]), new Map([new Keyword('aaaa'), 1, [], 2])],
+  [new CMap([new Keyword('aaaa'), 1, [], 2]), new CMap([new Keyword('aaaa'), 1, [], 2])],
   r('[["~#cmap",["~:aaaa",1,[],2]],["^0",["^1",1,[],2]]]')
 );
 
@@ -472,9 +497,9 @@ Assert::equal(['0' => 'x'], cr('["^ ","~?f","x"]'));
 Assert::equal(['' => 'x'], cr('["^ ","~_","x"]'));
 Assert::equal(['a' => 'b'], cr('["^ ","~$a","b"]'));
 Assert::equal(['a' => 'b'], cr('["^ ","~:a","b"]'));
-Assert::equal(new Map([['a'], 'b']), cr('["~#cmap",[["a"],"b"]]'));
-Assert::equal(new Map([new Set(['a']), 'b']), cr('["~#cmap",[["~#set",["a"]],"b"]]'));
-Assert::equal(new Map([['foo' => 'bar'], 'b']), cr('["~#cmap",[["^ ","foo","bar"],"b"]]'));
+Assert::equal(new CMap([['a'], 'b']), cr('["~#cmap",[["a"],"b"]]'));
+Assert::equal(new CMap([new Set(['a']), 'b']), cr('["~#cmap",[["~#set",["a"]],"b"]]'));
+Assert::equal(new CMap([['foo' => 'bar'], 'b']), cr('["~#cmap",[["^ ","foo","bar"],"b"]]'));
 
 Assert::equal('["^ ","key","value"]', cw(['key' => 'value']));
 Assert::equal('["^ ","~i0","a","x","b"]', cw([0 => 'a', 'x' => 'b']));

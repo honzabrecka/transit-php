@@ -2,13 +2,7 @@
 
 namespace transit;
 
-use transit\Keyword;
-use transit\Symbol;
-
 class Cache {
-
-    const WRITE = 1;
-    const READ = 2;
 
     const CACHE_CODE_DIGITS = 44;
     const BASE_CHAR_INDEX = 48;
@@ -18,28 +12,35 @@ class Cache {
 
     private $index = 0;
 
-    public function save($value, $type, $asKey, $mode) {
-        if (!$this->cacheable($value, $type, $asKey, $mode)) {
-            return $value;
-        }
+    public function getByCode($value) {
+        return $this->cache[$this->codeToIndex($value)];
+    }
 
-        if ($mode == self::READ) {
-            $this->cache[$this->index++] = $value;
-            $this->checkBounds();
-            return $value;
-        }
+    public function getByIndex($value) {
+        return $this->cache[$this->codeToIndex($value)];
+    }
 
-        if (isset($this->cache[$value])) {
-            return $this->cache[$value];
-        }
+    public function saveRead($representation, $value, $type, $asKey) {
+        if (!$this->cacheable($representation, NULL, $type, $asKey)) return $value;
+
+        $this->cache[$this->index++] = $value;
+        $this->checkBounds();
+        return $value;
+    }
+
+    public function saveWrite($value, $type, $asKey) {
+        if (!$this->cacheable($value, NULL, $type, $asKey)) return $value;
+        if (isset($this->cache[$value])) return $this->cache[$value];
 
         $this->cache[$value] = $this->indexToCode($this->index++);
         $this->checkBounds();
         return $value;
     }
 
-    public function get($value) {
-        return $this->cache[$this->codeToIndex($value)];
+    private function cacheable($representation, $value, $type, $asKey) {
+        if ($asKey && strlen($representation) > 3) return true;
+        if (($type == Keyword::class || $type == Symbol::class) && strlen($representation) > 3) return true;
+        return false;
     }
 
     private function checkBounds() {
@@ -47,15 +48,6 @@ class Cache {
             $this->cache = [];
             $this->index = 0;
         }
-    }
-
-    private function cacheable($value, $type, $asKey, $mode) {
-        $cacheableTypes = [
-            gettype('') => 3,
-            Keyword::class => $mode == self::READ ? 1 : 3,
-            Symbol::class => $mode == self::READ ? 1 : 3
-        ];
-        return ($asKey || $type === Keyword::class || $type === Symbol::class) && ((isset($cacheableTypes[$type]) && strlen($value) > $cacheableTypes[$type]));
     }
 
     private function indexToCode($index) {
