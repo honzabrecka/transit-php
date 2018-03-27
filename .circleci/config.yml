@@ -1,0 +1,11 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/w/transit-php
+    docker:
+      - image: honzabrecka/sandbox:0.3.0
+    steps:
+      - checkout
+      - run: composer install
+      - run: cd ~/w && transit-php/bin/transit-format
+      - run: vendor/bin/tester -C -p php test/test.php
