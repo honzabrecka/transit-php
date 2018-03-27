@@ -7,4 +7,4 @@ git clone https://github.com/honzabrecka/transit-format.git
 cd transit-format
 git checkout transit-php
 
-bin/verify -impls php -enc json -gen 5000
+bin/verify -impls php -enc json -gen 10000
