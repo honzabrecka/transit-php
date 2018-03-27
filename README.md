@@ -17,7 +17,7 @@ specification is complete._
 ## Installation
 
 ```
-$ composer require honzabrecka/transit-php
+composer require honzabrecka/transit-php
 ```
 
 ## Usage
