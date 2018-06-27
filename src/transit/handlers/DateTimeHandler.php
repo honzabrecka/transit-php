@@ -13,11 +13,11 @@ class DateTimeHandler implements Handler {
     }
 
     public function representation($obj) {
-        return $obj->getTimestamp();
+        return $obj->getTimestamp() * 1000;
     }
 
     public function resolve($obj) {
-        return new \DateTime('@' . $obj);
+        return new \DateTime('@' . $obj/1000);
     }
 
 }
