@@ -53,11 +53,11 @@ class Transit {
         $this->registerHandler(new SymbolHandler());
         $this->registerHandler(new SetHandler());
         $this->registerHandler(new ListHandler());
+        $this->registerHandler(new TimestampHandler());
         $this->registerHandler(new DateTimeHandler());
         $this->registerHandler(new URIHandler());
         $this->registerHandler(new UUIDHandler());
         $this->registerHandler(new CharHandler());
-        $this->registerHandler(new TimestampHandler());
         $this->registerHandler(new ArbitraryPrecisionDecimalHandler());
         $this->registerHandler(new ArbitraryPrecisionIntegerHandler());
     }
