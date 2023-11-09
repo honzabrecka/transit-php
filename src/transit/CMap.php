@@ -37,7 +37,7 @@ class CMap implements \ArrayAccess {
         return (string)$value;
     }
 
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value): void {
         $hash = $this->hash($offset);
 
         if (isset($this->hashes[$hash])) {
@@ -51,11 +51,11 @@ class CMap implements \ArrayAccess {
         $this->index = $this->index + 2;
     }
 
-    public function offsetExists($offset) {
+    public function offsetExists($offset): bool {
         return isset($this->hashes[$this->hash($offset)]);
     }
 
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset): void {
         $hash = $this->hash($offset);
         $index = $this->hashes[$hash];
         unset($this->hashes[$hash]);
@@ -68,7 +68,7 @@ class CMap implements \ArrayAccess {
         }, $this->hashes);
     }
 
-    public function offsetGet($offset) {
+    public function offsetGet($offset): mixed {
         return $this->data[$this->hashes[$this->hash($offset)] + 1];
     }
 
