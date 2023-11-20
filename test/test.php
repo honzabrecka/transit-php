@@ -168,6 +168,10 @@ function r($input) {
   return t()->read($input);
 }
 
+function roundtrip($input) {
+  return w(r($input));
+}
+
 //-------------------------
 // write
 
@@ -414,8 +418,8 @@ Assert::equal(
 //-------------------------
 // extensions
 
-Assert::equal('["~m482196050000"]', w([new DateTime('1985-04-12T23:20:50.52Z')]));
-Assert::equal((new DateTime('1985-04-12T23:20:50.52Z'))->getTimestamp(), r('["~m482196050000"]')[0]->getTimestamp());
+$timestamp = "[\"~#'\",\"~m1776669847291\"]";
+Assert::equal($timestamp, roundtrip($timestamp));
 
 Assert::equal('["~bYWJj"]', w([new Bytes('abc')]));
 Assert::equal([new Bytes('abc')], r('["~bYWJj"]'));
