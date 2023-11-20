@@ -1,0 +1,28 @@
+name: CI
+
+on: [push, pull_request]
+
+env:
+    php-options: -C -d opcache.enable=0 -d zend.exception_ignore_args=0
+
+jobs:
+    tests:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                php: ['8.0', '8.1', '8.2', '8.3']
+                sapi: ['php', 'php-cgi']
+
+            fail-fast: false
+
+        name: PHP ${{ matrix.php }}/${{ matrix.sapi }} tests on ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@v3
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: none
+
+            - run: composer install --no-progress --prefer-dist
+            - run: vendor/bin/tester -C test/test.php -p ${{ matrix.sapi }} -s ${{ env.php-options }}
