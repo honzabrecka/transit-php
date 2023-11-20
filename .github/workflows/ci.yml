@@ -23,6 +23,14 @@ jobs:
               with:
                   php-version: ${{ matrix.php }}
                   coverage: none
+            - uses: actions/setup-java@v3
+              with:
+                  distribution: 'zulu'
+                  java-version: '17'
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: '20'
 
             - run: composer install --no-progress --prefer-dist
             - run: vendor/bin/tester -C test/test.php -p ${{ matrix.sapi }} -s ${{ env.php-options }}
+            - run: cd .. && transit-php/bin/transit-format
