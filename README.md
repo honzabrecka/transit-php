@@ -1,4 +1,4 @@
-# transit-php [![CircleCI](https://circleci.com/gh/honzabrecka/transit-php/tree/master.svg?style=svg&circle-token=817187a55f77fb9bd7811bf5daa6e344885523fa)](https://circleci.com/gh/honzabrecka/transit-php/tree/master)
+# transit-php
 
 Transit is a data format and a set of libraries for conveying values between applications written in different languages. This library provides support for marshalling Transit data to/from PHP. Unlike the Java and Clojure implementations it relies on the non-streaming JSON parsing mechanism of the host PHP environment.
 
